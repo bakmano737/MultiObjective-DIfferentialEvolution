@@ -237,10 +237,6 @@ def demo(Pop,cost,cr,fde,lam,pmut,i,im,hist,etol,cfs,cargs):
     np.minimum(costc,costp,out=costc)
     chCst[1][1] = costc
 
-    # Check convergance
-    #if best <= etol:
-    #   return [Child,chCst]
-
     # Check Generation Counter 
     if (im <= i+1):
         # Maximum Number of generations reached
