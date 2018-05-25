@@ -7,7 +7,7 @@
 ##################################################
 # The models and cost functions are in models.py #
 ##################################################
-import models 
+#import models 
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import random as rnd
