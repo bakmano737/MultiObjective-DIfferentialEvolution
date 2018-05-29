@@ -187,10 +187,10 @@ def dealt(Pop,cost,cr,fde,lam,pmut,i,im,hist,etol,cf,carg):
 #    im    - Max Generation Count                                    #
 #    etol  - Exit Tolerance (Convergance)                            #
 #    hist  - Lowest SSR of all previous generations (Analysis)       #
-#    cfs   - Cost Functions                                          #
-#    cargs - Cost Functions' Arguments                               #
+#    cfs   - Cost Function                                           #
+#    cargs - Cost Function Arguments                                 #
 ######################################################################
-def demo(Pop,cost,cr,fde,lam,pmut,i,im,hist,etol,cfs,cargs):
+def demo(Pop,cost,cr,fde,lam,pmut,i,im,hist,etol,cf,carg):
     #########################
     # Step One: Selection   #
     #########################
@@ -228,25 +228,65 @@ def demo(Pop,cost,cr,fde,lam,pmut,i,im,hist,etol,cfs,cargs):
     # Step Three: Rejection #
     #########################
     # Evaluate Cost for Child Population
-    chCst = cfs(Child,cargs)
-    costc = chCst[1][1]
-    costp = cost[1][1]
-    # Replace dominated offspring with parent
-    dom = np.array(np.greater(costc,costp)).reshape((-1,))
-    Child[dom] = Pop[dom]
-    np.minimum(costc,costp,out=costc)
-    chCst[1][1] = costc
+    ChCst = cf(Child,carg)
+    # Pareto Ranking
+    TP = np.concatenate(Pop, Child).tolist()
+    TC = np.concatenate(cost,ChCst).tolist()
+    # Collect rank 1 individuals until a full new population is ready
+    Unranked = [TP,TC]
+    Ranked = [[],[]]
+    rank(Unranked,Ranked,Pop.size)
+    Child = Ranked[0]
+    ChCst = Ranked[1]
 
     # Check Generation Counter 
     if (im <= i+1):
         # Maximum Number of generations reached
         # Return the current population
-        return [Child,chCst]
+        return [Child,ChCst]
 
     ##############################
     # Create the next generation #
     ##############################
-    return demo(Child,chCst,cr,fde,lam,pmut,i+1,im,hist,etol,cfs,cargs)
+    return demo(Child,ChCst,cr,fde,lam,pmut,i+1,im,hist,etol,cf,carg)
+
+def rank(Unranked,Ranked,stop):
+    uPop = Unranked[0]
+    uCst = Unranked[1]
+    rPop = Ranked[0]
+    rCst = Ranked[1]
+    # Choose a random individual from unranked pop
+    ind = rnd.randint(0,len(uPop)-1)
+    # Determine the individuals who dominate the chosen one
+    # if any of the costs of the chosen one are less than the same
+    # cost of an individual of the unranked population then that 
+    # individual does not dominate the chosen individuals 
+    # In other words, the dominant individuals are those who 
+    # do NOT have ANY costs that the chosen idividual are less than
+    # that cost.
+    Dms = ~np.any(np.less(uCst[ind],uCst),axis=1)
+    if len(Dms):
+        # Rank the dominating population
+        rank(uPop[Dms],Ranked,stop)
+    else:
+        # Chosen individual is rank 1
+        # Add the individual to the ranked populationg
+        rPop.append(uPop[ind])
+        rCst.append(uCst[ind])
+        Ranked = [rPop,rCst]
+        # Check to see if the desired final population is reached
+        if len(rPop) >= stop:
+            return
+        else:
+            # If there is need to continue, remove the individual
+            # from the unranked population and rank the new
+            # unranked population
+            uPop.remove[ind]
+            uCst.remove[ind]
+            Unranked = [uPop,uCst]
+            rank(Unranked,Ranked,stop)
+    return
+        
 
 ######################################################################
 # Simulator Function - Use this to run DE and process the reuslts    #
