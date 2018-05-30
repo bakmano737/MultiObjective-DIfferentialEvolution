@@ -190,7 +190,7 @@ def dealt(Pop,cost,cr,fde,lam,pmut,i,im,hist,etol,cf,carg):
 #    cfs   - Cost Function                                           #
 #    cargs - Cost Function Arguments                                 #
 ######################################################################
-def demo(Pop,cost,cr,fde,lam,pmut,i,im,hist,etol,cf,carg):
+def demo(Pop,cost,cr,fde,lam,pmut,i,im,hist,cf):
     #########################
     # Step One: Selection   #
     #########################
@@ -228,29 +228,29 @@ def demo(Pop,cost,cr,fde,lam,pmut,i,im,hist,etol,cf,carg):
     # Step Three: Rejection #
     #########################
     # Evaluate Cost for Child Population
-    ChCst = cf(Child,carg)
+    ChCst = cf(Child)
     # Pareto Ranking
     TP = np.concatenate(Pop, Child).tolist()
     TC = np.concatenate(cost,ChCst).tolist()
     # Collect rank 1 individuals until a full new population is ready
     Unranked = [TP,TC]
     Ranked = [[],[]]
-    rank(Unranked,Ranked,Pop.size)
+    rankPop(Unranked,Ranked,Pop.size)
     Child = Ranked[0]
     ChCst = Ranked[1]
 
     # Check Generation Counter 
     if (im <= i+1):
         # Maximum Number of generations reached
-        # Return the current population
-        return [Child,ChCst]
+        # Return the rank1 population and cost
+        return rank1([Child,ChCst])
 
     ##############################
     # Create the next generation #
     ##############################
-    return demo(Child,ChCst,cr,fde,lam,pmut,i+1,im,hist,etol,cf,carg)
+    return demo(Child,ChCst,cr,fde,lam,pmut,i+1,im,hist,cf)
 
-def rank(Unranked,Ranked,stop):
+def rankPop(Unranked,Ranked,stop):
     uPop = Unranked[0]
     uCst = Unranked[1]
     rPop = Ranked[0]
@@ -262,15 +262,15 @@ def rank(Unranked,Ranked,stop):
     # cost of an individual of the unranked population then that 
     # individual does not dominate the chosen individuals 
     # In other words, the dominant individuals are those who 
-    # do NOT have ANY costs that the chosen idividual are less than
+    # do NOT have ANY costs such that the chosen's cost is less than
     # that cost.
     Dms = ~np.any(np.less(uCst[ind],uCst),axis=1)
     if len(Dms):
         # Rank the dominating population
-        rank(uPop[Dms],Ranked,stop)
+        rankPop(uPop[Dms],Ranked,stop)
     else:
         # Chosen individual is rank 1
-        # Add the individual to the ranked populationg
+        # Add the individual to the ranked population
         rPop.append(uPop[ind])
         rCst.append(uCst[ind])
         Ranked = [rPop,rCst]
@@ -284,75 +284,21 @@ def rank(Unranked,Ranked,stop):
             uPop.remove[ind]
             uCst.remove[ind]
             Unranked = [uPop,uCst]
-            rank(Unranked,Ranked,stop)
+            rankPop(Unranked,Ranked,stop)
     return
-        
 
-######################################################################
-# Simulator Function - Use this to run DE and process the reuslts    #
-######################################################################
-def deSimulate(G,N,P,pcr,fde,pmut,etol,cf,carg):
-    # Create the history array
-    Hist = np.zeros(G)
-    # Create an initial population
-    Pop = rnd.rand(N,P)
-    # Evaluate cost function for initial pop
-    Cost = cf(Pop,carg)
-    # Run DE
-    FinalGen = diffevol(Pop,Cost,pcr,fde,pmut,0,G,Hist,etol,cf,carg)
-    # Parse the output [Population,[[simtim,simslug],[res,ssr]]]
-    FinalPop = FinalGen[0]
-    FinalCst = FinalGen[1]
-    FinalSSR = FinalCst[1][1]
-    # Determine the individual with the lowest SSR
-    optimum  = np.argmin(FinalSSR)
-    # Get the parameters, cost, and simulation of the champion
-    BestPars = FinalPop[optimum]
-    BestCost = FinalSSR[optimum]
-    BestVals = FinalCst[0][optimum]
-    # Save the current output for later
-    return [BestPars,BestCost,BestVals,Hist]
-
-def deaSimulate(G,N,P,pcr,fde,lam,pmut,etol,cf,carg):
-    # Create the history array
-    Hist = np.zeros(G)
-    # Create an initial population
-    Pop = rnd.rand(N,P)
-    # Evaluate cost function for initial pop
-    Cost = cf(Pop,carg)
-    # Run DE
-    FinalGen = dealt(Pop,Cost,pcr,fde,lam,pmut,0,G,Hist,etol,cf,carg)
-    # Parse the output [Population,[[simtim,simslug],[res,ssr]]]
-    FinalPop = FinalGen[0]
-    FinalCst = FinalGen[1]
-    FinalSSR = FinalCst[1][1]
-    # Determine the individual with the lowest SSR
-    optimum  = np.argmin(FinalSSR)
-    # Get the parameters, cost, and simulation of the champion
-    BestPars = FinalPop[optimum]
-    BestCost = FinalSSR[optimum]
-    BestVals = FinalCst[0][optimum]
-    # Save the current output for later
-    return [BestPars,BestCost,BestVals,Hist]
-
-def demoSimulate(G,N,P,pcr,fde,lam,pmut,etol,cfs,cargs):
-    # Create the history array
-    Hist = np.zeros(G)
-    # Create an initial population
-    Pop = rnd.rand(N,P)
-    # Evaluate cost function for initial pop
-    Cost = cfs(Pop,cargs)
-    # Run DE
-    FinalGen = dealt(Pop,Cost,pcr,fde,lam,pmut,0,G,Hist,etol,cfs,cargs)
-    # Parse the output [Population,[[simtim,simslug],[res,ssr]]]
-    FinalPop = FinalGen[0]
-    FinalCst = FinalGen[1]
-    FinalSSR = FinalCst[1][1]
-    # Determine the individual with the lowest SSR
-    optimum  = np.argmin(FinalSSR)
-    # Get the parameters, cost, and simulation of the champion
-    BestPars = FinalPop[optimum]
-    BestCost = FinalSSR[optimum]
-    BestVals = FinalCst[0][optimum]
-    # Save the current output for later
-    return [BestPars,BestCost,BestVals,Hist]
+def rank1(Pop):
+    # Return all Rank 1 solution in the given population
+    pars = Pop[0]
+    csts = Pop[1]
+    rk1p = []
+    rk1c = []
+    for i in range(len(pars)):
+        if len(~np.any(np.less(csts[i],csts),axis=1)):
+            # i is not rank 1
+            continue
+        else:
+            # i is rank 1
+            rk1p.append(pars[i])
+            rk1c.append(csts[i])
+    return [rk1p,rk1c]
