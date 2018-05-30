@@ -190,23 +190,23 @@ def dealt(Pop,cost,cr,fde,lam,pmut,i,im,hist,etol,cf,carg):
 #    cfs   - Cost Function                                           #
 #    cargs - Cost Function Arguments                                 #
 ######################################################################
-def demo(Pop,cost,cr,fde,lam,pmut,i,im,hist,cf):
+def demo(Pop,Cost,cr,fde,pmut,i,im,cf):
     #########################
     # Step One: Selection   #
     #########################
     # Generate two unique random integers #
     # for each member of the population   #
-    r = rnd.choice(Pop[:,0].size, (Pop[:,0].size,2))
+    N = Pop.shape[0]
+    r = rnd.choice(N, (N,2))
     # Replace pairs of duplicates with a unique pair
     dup    = r[:,0]==r[:,1]
-    r[dup] = rnd.choice(Pop[:,0].size,r[dup].shape,False)
+    r[dup] = rnd.choice(N,r[dup].shape,False)
+    # Neither element of r can be its own index
+    a = np.arange(N).reshape((N,1))
+    r[np.equal(r,a)] = np.mod(r[np.equal(r,a)]+1,N)
     # Define the mating partners
     FirstMates = Pop[r[:,0],:]
     SecndMates = Pop[r[:,1],:]
-    # Best in show
-    besti = np.argmin(cost[1][1])
-    bestp = Pop[besti,:]
-    hist[i] = cost[1][1][besti]
 
     ####################
     # Step Two: Mating #
@@ -215,28 +215,25 @@ def demo(Pop,cost,cr,fde,lam,pmut,i,im,hist,cf):
     Pcr = rnd.choice([0,1],Pop.shape,p=[1-cr,cr])
     # Recombination
     mateDiff = np.subtract(FirstMates,SecndMates)
-    bestDiff = np.subtract(bestp,Pop)
     crssover = np.multiply(fde*Pcr,mateDiff)
-    bestover = np.multiply(lam*Pcr,bestDiff)
-    fullover = np.add(crssover,bestover)
-    Child    = np.mod(np.add(Pop,fullover),1)
+    Child    = np.mod(np.add(Pop,crssover),1)
     # Mutation
     Mut = rnd.rand(*Child.shape)
     Mut = Mut<pmut
     Child[Mut] = rnd.rand(*Child[Mut].shape)
+
     #########################
     # Step Three: Rejection #
     #########################
     # Evaluate Cost for Child Population
     ChCst = cf(Child)
     # Pareto Ranking
-    TP = np.concatenate(Pop, Child).tolist()
-    TC = np.concatenate(cost,ChCst).tolist()
-    # Collect rank 1 individuals until a full new population is ready
-    Unranked = [TP,TC]
-    Ranked = [[],[]]
+    TP = np.vstack((Pop, Child))
+    TC = np.vstack((Cost,ChCst))
+    Unranked = np.hstack((TP,TC))
+    Ranked = np.array([[],[],[]]).T
     rankPop(Unranked,Ranked,Pop.size)
-    Child = Ranked[0]
+    Child = TP[Ranked[0]]
     ChCst = Ranked[1]
 
     # Check Generation Counter 
@@ -248,32 +245,29 @@ def demo(Pop,cost,cr,fde,lam,pmut,i,im,hist,cf):
     ##############################
     # Create the next generation #
     ##############################
-    return demo(Child,ChCst,cr,fde,lam,pmut,i+1,im,hist,cf)
+    return demo(Child,ChCst,cr,fde,pmut,i+1,im,cf)
 
 def rankPop(Unranked,Ranked,stop):
-    uPop = Unranked[0]
-    uCst = Unranked[1]
-    rPop = Ranked[0]
-    rCst = Ranked[1]
+    uPop = Unranked[:,0]
+    uPop = np.reshape(uPop,(uPop.size,1))
+    uCst = Unranked[:,1:]
+    rPop = Ranked[:,0]
+    rCst = Ranked[:,1:]
     # Choose a random individual from unranked pop
-    ind = rnd.randint(0,len(uPop)-1)
+    ind = np.mod(rnd.randint(0,uPop.shape[0]),uPop.shape[0])
     # Determine the individuals who dominate the chosen one
-    # if any of the costs of the chosen one are less than the same
-    # cost of an individual of the unranked population then that 
-    # individual does not dominate the chosen individuals 
-    # In other words, the dominant individuals are those who 
-    # do NOT have ANY costs such that the chosen's cost is less than
-    # that cost.
-    Dms = ~np.any(np.less(uCst[ind],uCst),axis=1)
-    if len(Dms):
+    # ALL of their costs are LESS than or EQUAL to the chosen one
+    Dms = np.all(np.less_equal(uCst,uCst[ind,:]),axis=1)
+    if np.any(Dms):
         # Rank the dominating population
-        rankPop(uPop[Dms],Ranked,stop)
+        unr = np.hstack((uPop[Dms],uCst[Dms]))
+        rankPop(unr,Ranked,stop)
     else:
         # Chosen individual is rank 1
         # Add the individual to the ranked population
-        rPop.append(uPop[ind])
-        rCst.append(uCst[ind])
-        Ranked = [rPop,rCst]
+        rPop.append(uPop[ind,:])
+        rCst.append(uCst[ind,:])
+        Ranked.append(np.hstack(rPop,rCst)) 
         # Check to see if the desired final population is reached
         if len(rPop) >= stop:
             return
@@ -281,10 +275,10 @@ def rankPop(Unranked,Ranked,stop):
             # If there is need to continue, remove the individual
             # from the unranked population and rank the new
             # unranked population
-            uPop.remove[ind]
-            uCst.remove[ind]
-            Unranked = [uPop,uCst]
-            rankPop(Unranked,Ranked,stop)
+            np.delete(uPop,ind,axis=0)
+            np.delete(uCst,ind,axis=0)
+            unr = np.hstack((uPop,uCst))
+            rankPop(unr,Ranked,stop)
     return
 
 def rank1(Pop):

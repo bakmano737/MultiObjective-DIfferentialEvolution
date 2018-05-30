@@ -25,7 +25,7 @@ def f2(x):
     return (x-2)**2
 
 def sn1(x):
-    return [f1(x),f2(x)]
+    return np.hstack((f1(x),f2(x)))
 
 def tp():
     xs = np.arange(0.0,2.0,1e-4)
@@ -44,17 +44,14 @@ def desim():
     N = 50
     pcr = 0.7
     fde = 0.3
-    lam = 0.7
     pmut = 0.25
-    # Create the history array
-    Hist = np.zeros(G)
     # Create an initial population
     Pop = np.random.rand(N,1)
     # Evaluate cost function for initial pop
     cf = sn1
     Cost = cf(Pop)
     # Run DE
-    ParetoFront = de.demo(Pop,Cost,pcr,fde,lam,pmut,0,G,Hist,cf)
+    ParetoFront = de.demo(Pop,Cost,pcr,fde,pmut,0,G,cf)
     sim = ParetoFront[0]
     print("Ideal Parameter Vals:")
     print(sim)
