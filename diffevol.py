@@ -247,6 +247,13 @@ def demo(Pop,Cost,cr,fde,pmut,i,im,cf):
     ##############################
     return demo(Child,ChCst,cr,fde,pmut,i+1,im,cf)
 
+def loopRank(Cost):
+    Rank = np.ones(Cost.shape[0],dtype=bool)
+    for i,cst in enumerate(Cost):
+        if Rank[i]:
+            Rank[Rank] = np.any(Cost[Rank]<=cst, axis=1)
+    return Rank
+
 def rankPop(Unranked,Ranked,stop):
     uPop = Unranked[:,0]
     uPop = np.reshape(uPop,(uPop.size,1))
