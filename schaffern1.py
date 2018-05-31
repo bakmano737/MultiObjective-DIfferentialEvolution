@@ -40,8 +40,8 @@ def plotTP():
 
 def desim():
     # Define Evolution Constants
-    G = 50
-    N = 50
+    G = 10
+    N = 10
     pcr = 0.7
     fde = 0.3
     pmut = 0.25
@@ -51,15 +51,16 @@ def desim():
     cf = sn1
     Cost = cf(Pop)
     # Run DE
-    ParetoFront = de.demo(Pop,Cost,pcr,fde,pmut,0,G,cf)
-    sim = ParetoFront[0]
+    PF = de.demo(Pop,Cost,pcr,fde,pmut,0,G,cf)
+    # Rank 1
+    R1 = PF[PF[:,0]==1]
     print("Ideal Parameter Vals:")
-    print(sim)
-    f1s = ParetoFront[1][0]
-    f2s = ParetoFront[1][1]
+    print(R1[:,1])
+    f1s = R1[:,2]
+    f2s = R1[:,3]
     [f1t, f2t] = tp()
-    plt.plot(f1s,f2s,'rc',f1t,f2t,c='b',linewidth=3)
+    plt.plot(f1s,f2s,'ro',f1t,f2t,c='b',linewidth=3)
     plt.show()
     return
 
-desim()
+#desim()

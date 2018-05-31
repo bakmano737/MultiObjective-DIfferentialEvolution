@@ -228,78 +228,55 @@ def demo(Pop,Cost,cr,fde,pmut,i,im,cf):
     # Evaluate Cost for Child Population
     ChCst = cf(Child)
     # Pareto Ranking
+    # Gather the info for the population
     TP = np.vstack((Pop, Child))
     TC = np.vstack((Cost,ChCst))
-    Unranked = np.hstack((TP,TC))
+    # Everything is unranked to begin
+    Unrank = np.hstack((TP,TC))
+    # Nothing is ranked to begin
     Ranked = np.array([[],[],[]]).T
-    rankPop(Unranked,Ranked,Pop.size)
-    Child = TP[Ranked[0]]
-    ChCst = Ranked[1]
+    # Only need enough rank 1 solutions to seed the next gen
+    while Ranked.shape[0] < N:
+        # Get the rank 1 solutions
+        p = bestRank(Unrank[:,1:])
+        # Add the rank 1 solutions to the Ranked population
+        np.vstack((Ranked,Unrank[p]))
+        # Remove the rank 1 solutions from the unranked population
+        Unrank = Unrank[~p]
+        # Rank the new population
+    # Disaggregate the first N best solutions
+    Child = Ranked[:N,0]
+    ChCst = Ranked[:N,1:]
 
     # Check Generation Counter 
     if (im <= i+1):
         # Maximum Number of generations reached
         # Return the rank1 population and cost
-        return rank1([Child,ChCst])
+        return compRank(np.hstack((Child,ChCst)))
 
     ##############################
     # Create the next generation #
     ##############################
     return demo(Child,ChCst,cr,fde,pmut,i+1,im,cf)
 
-def loopRank(Cost):
-    Rank = np.ones(Cost.shape[0],dtype=bool)
+def bestRank(Cost):
+    Pareto = np.ones(Cost.shape[0],dtype=bool)
     for i,cst in enumerate(Cost):
-        if Rank[i]:
-            Rank[Rank] = np.any(Cost[Rank]<=cst, axis=1)
-    return Rank
+        if Pareto[i]:
+            Pareto[Pareto] = np.any(Cost[Pareto]<=cst, axis=1)
+    return Pareto
 
-def rankPop(Unranked,Ranked,stop):
-    uPop = Unranked[:,0]
-    uPop = np.reshape(uPop,(uPop.size,1))
-    uCst = Unranked[:,1:]
-    rPop = Ranked[:,0]
-    rCst = Ranked[:,1:]
-    # Choose a random individual from unranked pop
-    ind = np.mod(rnd.randint(0,uPop.shape[0]),uPop.shape[0])
-    # Determine the individuals who dominate the chosen one
-    # ALL of their costs are LESS than or EQUAL to the chosen one
-    Dms = np.all(np.less_equal(uCst,uCst[ind,:]),axis=1)
-    if np.any(Dms):
-        # Rank the dominating population
-        unr = np.hstack((uPop[Dms],uCst[Dms]))
-        rankPop(unr,Ranked,stop)
-    else:
-        # Chosen individual is rank 1
-        # Add the individual to the ranked population
-        rPop.append(uPop[ind,:])
-        rCst.append(uCst[ind,:])
-        Ranked.append(np.hstack(rPop,rCst)) 
-        # Check to see if the desired final population is reached
-        if len(rPop) >= stop:
-            return
-        else:
-            # If there is need to continue, remove the individual
-            # from the unranked population and rank the new
-            # unranked population
-            np.delete(uPop,ind,axis=0)
-            np.delete(uCst,ind,axis=0)
-            unr = np.hstack((uPop,uCst))
-            rankPop(unr,Ranked,stop)
-    return
-
-def rank1(Pop):
-    # Return all Rank 1 solution in the given population
-    pars = Pop[0]
-    csts = Pop[1]
-    rk1p = []
-    rk1c = []
-    for i in range(len(pars)):
-        if len(~np.any(np.less(csts[i],csts),axis=1)):
-            # i is not rank 1
-            continue
-        else:
-            # i is rank 1
-            rk1p.append(pars[i])
-            rk1c.append(csts[i])
-    return [rk1p,rk1c]
+def compRank(Pop):
+    N = Pop.shape[0]
+    rank = 1
+    Rank = np.zeros((N,1))
+    Ranked = np.array([[],[],[],[]]).T
+    while Ranked.shape[0] < N:
+        p = bestRank(Pop[:,1:])
+        r = rank*np.ones((p.shape[0],1))
+        ranked = np.hstack((r[p],Pop[p,:]))
+        Ranked = np.vstack((Ranked,ranked))
+        Pop = Pop[~p]
+        Rank = Rank[~p]
+        rank += 1
+    return Ranked
