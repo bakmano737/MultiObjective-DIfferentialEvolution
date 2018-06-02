@@ -197,6 +197,8 @@ def demo(Pop,Cost,cr,fde,pmut,i,im,cf):
     # Generate two unique random integers #
     # for each member of the population   #
     N = Pop.shape[0]
+    p = Pop.shape[1]
+    c = Cost.shape[1]
     r = rnd.choice(N, (N,2))
     # Replace pairs of duplicates with a unique pair
     dup    = r[:,0]==r[:,1]
@@ -234,20 +236,19 @@ def demo(Pop,Cost,cr,fde,pmut,i,im,cf):
     # Everything is unranked to begin
     Unrank = np.hstack((TP,TC))
     # Nothing is ranked to begin
-    Ranked = np.array([[],[],[]]).T
+    Ranked = np.empty((0,p+c))
     # Only need enough rank 1 solutions to seed the next gen
     while Ranked.shape[0] < N:
         # Get the rank 1 solutions
-        p = bestRank(Unrank[:,1:])
+        b = bestRank(Unrank[:,p:])
         # Add the rank 1 solutions to the Ranked population
-        np.vstack((Ranked,Unrank[p]))
+        Ranked = np.vstack((Ranked,Unrank[b]))
         # Remove the rank 1 solutions from the unranked population
-        Unrank = Unrank[~p]
+        Unrank = Unrank[~b]
         # Rank the new population
     # Disaggregate the first N best solutions
-    Child = Ranked[:N,0]
-    ChCst = Ranked[:N,1:]
-
+    Child = Ranked[:N,:p]
+    ChCst = Ranked[:N,p:]
     # Check Generation Counter 
     if (im <= i+1):
         # Maximum Number of generations reached
@@ -268,15 +269,16 @@ def bestRank(Cost):
 
 def compRank(Pop):
     N = Pop.shape[0]
+    p = Pop.shape[1]
     rank = 1
     Rank = np.zeros((N,1))
-    Ranked = np.array([[],[],[],[]]).T
+    Ranked = np.empty((0,p+1))
     while Ranked.shape[0] < N:
-        p = bestRank(Pop[:,1:])
-        r = rank*np.ones((p.shape[0],1))
-        ranked = np.hstack((r[p],Pop[p,:]))
+        b = bestRank(Pop[:,1:])
+        r = rank*np.ones((b.shape[0],1))
+        ranked = np.hstack((r[b],Pop[b,:]))
         Ranked = np.vstack((Ranked,ranked))
-        Pop = Pop[~p]
-        Rank = Rank[~p]
+        Pop = Pop[~b]
+        Rank = Rank[~b]
         rank += 1
     return Ranked

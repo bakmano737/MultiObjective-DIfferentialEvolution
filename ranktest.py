@@ -27,7 +27,7 @@ def compRank(Pop):
 
 def rankTest():
     print("Begin")
-    N  = 25
+    N  = 25000
     X0 = np.random.rand(N,1)
     X  = sn1.denorm(X0)
     C  = sn1.sn1(X)
