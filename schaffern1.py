@@ -60,7 +60,7 @@ def desim():
     plot.plot(f1t,f2t,'b',linewidth=3,label="True Front")
     for i,g in enumerate(G):
         gen = "Gen: {0}".format(g)
-        PF = de.demo(Pop,Cost,pcr,fde,pmut,0,g,cf)
+        PF = de.demo(Pop,Cost,pcr,fde,pmut,0,0,g,cf)
         R1 = PF[PF[:,0]==1]
         print("Number of Rank 1 Solutions: {0}".format(R1.shape[0]))
         print("Ideal Parameter Vals:")
@@ -72,4 +72,4 @@ def desim():
     plt.show()
     return
 
-desim()
+#desim()

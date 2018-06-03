@@ -40,7 +40,7 @@ def desim():
     N = 50
     p = 30
     pcr = 0.7
-    fde = 0.3
+    fde = 0.7
     pmut = 1/float(p)
     bhs = 2
     # Create an initial population
@@ -71,4 +71,4 @@ def desim():
     return
 
 #plotTP()
-desim()
+#desim()

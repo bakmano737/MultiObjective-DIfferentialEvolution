@@ -244,50 +244,41 @@ def demo(Pop,Cost,cr,fde,pmut,bhs,i,im,cf):
     ChCst = cf(Child)
     # Pareto Ranking
     # Gather the info for the population
-    TP = np.vstack((Pop, Child))
-    TC = np.vstack((Cost,ChCst))
-    # Everything is unranked to begin
-    Unrank = np.hstack((TP,TC))
-    # Nothing is ranked to begin
-    Ranked = np.empty((0,p+c))
-    # Only need enough rank 1 solutions to seed the next gen
-    while Ranked.shape[0] < N:
-        # Get the rank 1 solutions
-        b = bestRank(Unrank[:,p:])
-        # Add the rank 1 solutions to the Ranked population
-        Ranked = np.vstack((Ranked,Unrank[b]))
-        # Remove the rank 1 solutions from the unranked population
-        Unrank = Unrank[~b]
-        # Rank the new population
-    # Disaggregate the first N best solutions
-    Child = Ranked[:N,:p]
-    ChCst = Ranked[:N,p:]
+    Parents  = np.hstack((Pop,Cost))
+    Children = np.hstack((Child,ChCst))
+    TotalPop = np.vstack((Parents, Children))
+    # Rank the combined population
+    Ranked = compRank(TotalPop,p,c)
+    Parents = Ranked[:N,:]
+    Children = Ranked[N:,:]
+    mask = Children[:,0]>Parents[:,0]
+    Children[mask] = Parents[mask]
     # Check Generation Counter 
     if (im <= i+1):
         # Maximum Number of generations reached
         # Return the rank1 population and cost
-        return compRank(np.hstack((Child,ChCst)))
+        return Children
 
     ##############################
     # Create the next generation #
     ##############################
+    Child = Children[:,1:p+1]
+    ChCst = Children[:,p+1:]
     return demo(Child,ChCst,cr,fde,pmut,bhs,i+1,im,cf)
 
 def bestRank(Cost):
     Pareto = np.ones(Cost.shape[0],dtype=bool)
     for i,cst in enumerate(Cost):
-        if Pareto[i]:
-            Pareto[Pareto] = np.any(Cost[Pareto]<=cst, axis=1)
+        Pareto[Pareto] = np.any(Cost[Pareto]>=cst,axis=1)
     return Pareto
 
-def compRank(Pop):
+def compRank(Pop,p,c):
     N = Pop.shape[0]
-    p = Pop.shape[1]
     rank = 1
     Rank = np.zeros((N,1))
-    Ranked = np.empty((0,p+1))
+    Ranked = np.empty((0,p+c+1))
     while Ranked.shape[0] < N:
-        b = bestRank(Pop[:,1:])
+        b = bestRank(Pop[:,p:])
         r = rank*np.ones((b.shape[0],1))
         ranked = np.hstack((r[b],Pop[b,:]))
         Ranked = np.vstack((Ranked,ranked))

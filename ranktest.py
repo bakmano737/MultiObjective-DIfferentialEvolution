@@ -1,41 +1,21 @@
 import schaffern1 as sn1
+import zdt1
+import diffevol as de
 import numpy as np
 import matplotlib.pyplot as plt
 
-def bestRank(Cost):
-    Pareto = np.ones(Cost.shape[0],dtype=bool)
-    for i,cst in enumerate(Cost):
-        if Pareto[i]:
-            Pareto[Pareto] = np.any(Cost[Pareto]<=cst, axis=1)
-    return Pareto
-
-def compRank(Pop):
-    N = Pop.shape[0]
-    rank = 1
-    Rank = np.zeros((N,1))
-    Ranked = np.array([[],[],[],[]]).T
-    while Ranked.shape[0] < N:
-        p = bestRank(Pop[:,1:])
-        r = rank*np.ones((p.shape[0],1))
-        ranked = np.hstack((r[p],Pop[p,:]))
-        Ranked = np.vstack((Ranked,ranked))
-        #print(Ranked.shape[0])
-        Pop = Pop[~p]
-        Rank = Rank[~p]
-        rank += 1
-    return Ranked
-
 def rankTest():
-    print("Begin")
-    N  = 25000
-    X0 = np.random.rand(N,1)
-    X  = sn1.denorm(X0)
-    C  = sn1.sn1(X)
+    N  = 50
+    p  = 30
+    X  = np.random.rand(N,p)
+    C  = zdt1.zdt1(X)
+    plt.scatter(C[:,0],C[:,1])
+    plt.show()
     P  = np.hstack((X,C))
-    R  = compRank(P)
+    R  = de.compRank(P,p,2)
     r  = R[:,0]
-    f1 = R[:,2]
-    f2 = R[:,3]
+    f1 = R[:,1+p]
+    f2 = R[:,2+p]
     plt.scatter(f1,f2,c=r)
     plt.show()
 
