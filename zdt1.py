@@ -35,13 +35,14 @@ def plotTP():
 
 def desim():
     # Define Evolution Constants
-    G = [5,10,20]
+    G = [5,50,250]
     S = ['b+','r^','ko']
     N = 50
     p = 30
     pcr = 0.7
     fde = 0.3
-    pmut = 0.5
+    pmut = 1/float(p)
+    bhs = 2
     # Create an initial population
     Pop = np.random.rand(N,p)
     # Evaluate cost function for initial pop
@@ -53,13 +54,17 @@ def desim():
     plot.plot(f1t,f2t,'b',linewidth=3,label="True Front")
     for i,g in enumerate(G):
         gen = "Gen: {0}".format(g)
-        PF = de.demo(Pop,Cost,pcr,fde,pmut,0,g,cf)
+        print(gen)
+        PF = de.demo(Pop,Cost,pcr,fde,pmut,bhs,0,g,cf)
         R1 = PF[PF[:,0]==1]
+        R1p = R1[:,1:p+1]
+        R1c = R1[:,p+1:]
+        f1s = R1c[:,0]
+        f2s = R1c[:,1]
         print("Number of Rank 1 Solutions: {0}".format(R1.shape[0]))
         print("Ideal Parameter Vals:")
-        print(R1[:,1])
-        f1s = R1[:,2]
-        f2s = R1[:,3]
+        print("x0: {0}".format(R1p[:,0]))
+        print("Avg x1:x29: {0}".format(np.average(R1p[:,1:],axis=1)))
         plot.plot(f1s,f2s,S[i],label=gen)
     plt.legend()
     plt.show()

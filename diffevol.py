@@ -183,14 +183,12 @@ def dealt(Pop,cost,cr,fde,lam,pmut,i,im,hist,etol,cf,carg):
 #    fde   - Child variability factor                                #
 #    lam   - Best parent scaling factor                              #
 #    pmut  - Mutation Probability                                    #
+#    bhs   - Boundary Handling Strategy (0-wrap,1-reflect,2-snap)    #
 #    i     - Generation counter                                      #
 #    im    - Max Generation Count                                    #
-#    etol  - Exit Tolerance (Convergance)                            #
-#    hist  - Lowest SSR of all previous generations (Analysis)       #
-#    cfs   - Cost Function                                           #
-#    cargs - Cost Function Arguments                                 #
+#    cf    - Cost Functions                                          #
 ######################################################################
-def demo(Pop,Cost,cr,fde,pmut,i,im,cf):
+def demo(Pop,Cost,cr,fde,pmut,bhs,i,im,cf):
     #########################
     # Step One: Selection   #
     #########################
@@ -218,7 +216,22 @@ def demo(Pop,Cost,cr,fde,pmut,i,im,cf):
     # Recombination
     mateDiff = np.subtract(FirstMates,SecndMates)
     crssover = np.multiply(fde*Pcr,mateDiff)
-    Child    = np.mod(np.add(Pop,crssover),1)
+    newchild = np.add(Pop,crssover) 
+    # Maintain Parameter Space
+    if bhs == 0:
+        # Wrap-around
+        Child = np.mod(newchild,1)
+    elif bhs ==1:
+        # Reflection
+        Child = np.mod(-newchild,1)
+    elif bhs ==2:
+        # Set to Bound
+        Child = newchild
+        Child[Child>1] = 1.0
+        Child[Child<0] = 0.0
+    else:
+        print("Invalid BHS")
+        exit()
     # Mutation
     Mut = rnd.rand(*Child.shape)
     Mut = Mut<pmut
@@ -258,7 +271,7 @@ def demo(Pop,Cost,cr,fde,pmut,i,im,cf):
     ##############################
     # Create the next generation #
     ##############################
-    return demo(Child,ChCst,cr,fde,pmut,i+1,im,cf)
+    return demo(Child,ChCst,cr,fde,pmut,bhs,i+1,im,cf)
 
 def bestRank(Cost):
     Pareto = np.ones(Cost.shape[0],dtype=bool)
