@@ -71,4 +71,4 @@ def desim():
     return
 
 #plotTP()
-#desim()
+desim()

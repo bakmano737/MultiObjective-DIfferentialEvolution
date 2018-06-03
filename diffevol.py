@@ -269,7 +269,12 @@ def demo(Pop,Cost,cr,fde,pmut,bhs,i,im,cf):
 def bestRank(Cost):
     Pareto = np.ones(Cost.shape[0],dtype=bool)
     for i,cst in enumerate(Cost):
-        Pareto[Pareto] = np.any(Cost[Pareto]>=cst,axis=1)
+        if Pareto[i]:
+            Pareto[Pareto] = ~np.all(Cost[Pareto]>=cst,axis=1)
+            # The above identifies the current point as innefficient;
+            # all of it's costs are equal to it's own costs
+            # This point may still be optimal
+            Pareto[i] = True
     return Pareto
 
 def compRank(Pop,p,c):
