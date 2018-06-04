@@ -70,5 +70,4 @@ def desim():
     plt.show()
     return
 
-#plotTP()
 desim()

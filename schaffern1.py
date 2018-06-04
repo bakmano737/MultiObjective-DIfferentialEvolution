@@ -13,7 +13,7 @@ import diffevol as de
 # denorm takes x0 from [0,1]    to [-R,R] (x)
 
 # R
-__sn1R__ = 100
+__sn1R__ = 10
 
 def denorm(x0):
     return 2*__sn1R__*x0-__sn1R__
@@ -43,11 +43,11 @@ def plotTP():
 
 def desim():
     # Define Evolution Constants
-    G = [5,10,20]
+    G = [5,10,50]
     S = ['b+','r^','ko']
     N = 50
     pcr = 0.7
-    fde = 0.3
+    fde = 0.7
     pmut = 0.5
     # Create an initial population
     Pop = np.random.rand(N,1)
@@ -72,4 +72,4 @@ def desim():
     plt.show()
     return
 
-#desim()
+desim()
